@@ -401,7 +401,7 @@ void EXTI0_1_IRQHandler(void)
 {
 	// TODO: Debounce using HAL_GetTick()
     current_time = HAL_GetTick(); // Get current time
-  if (current_time - previous_time > 100){ // Check if time difference is greater than 100ms (debounce)
+  if (current_time - previous_time > 300){ // Check if time difference is greater than 100ms (debounce)
     if (waveform_index == 2) {
       waveform_index = 0;
     } else {
@@ -411,12 +411,18 @@ void EXTI0_1_IRQHandler(void)
     lcd_putstring(waveform[waveform_index]); // Write new waveform to LCD
     __HAL_TIM_DISABLE_DMA(&htim2, TIM_DMA_CC1); // Disable DMA transfer
     HAL_DMA_Abort_IT(&hdma_tim2_ch1); // Abort DMA transfer
-    if (waveform_index == 0)
+    switch (waveform_index) { // Start DMA transfer with new LUT (Sine, Triangle, Sawtooth)
+      case 0:
         HAL_DMA_Start_IT(&hdma_tim2_ch1, Sin_LUT, DestAddress, NS);
-    else if (waveform_index == 1)
+        break;
+      case 1:
         HAL_DMA_Start_IT(&hdma_tim2_ch1, triangle_LUT, DestAddress, NS);
-    else if (waveform_index == 2)
+        break;
+      case 2:
         HAL_DMA_Start_IT(&hdma_tim2_ch1, saw_LUT, DestAddress, NS);
+        break;
+    }
+    __HAL_TIM_ENABLE_DMA(&htim2, TIM_DMA_CC1); // Enable DMA transfer
 
   }
   previous_time = current_time; // Update previous time
